@@ -1,0 +1,5 @@
+Flask
+Werkzeug
+docx2pdf
+pdf2docx
+Pillow
