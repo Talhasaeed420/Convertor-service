@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Universal File Converter</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <!-- Navbar (Fixed for better layout and responsiveness) -->
+  <nav class="navbar animate-fade-in">
+    <div class="logo">FileConverter 🔄</div>
+    <div class="nav-links">
+      <a href="/" class="nav-link active">Home</a>
+      </div>
+    <div class="hamburger">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero animate-slide-up">
+    <div class="hero-content">
+      <h1>Convert Your Files with Ease</h1>
+      <p>Upload any supported file, select the output format, and get your converted file instantly. Supports images (JPG, JPEG, PNG, WEBP) and documents (DOCX ↔ PDF).</p>
+    </div>
+  </section>
+
+  <!-- Main Conversion Section -->
+  <section class="container animate-fade-in">
+    <h2>File Converter Tool</h2>
+    <form id="uploadForm">
+      <div class="form-group">
+        <label for="fileInput">Select File:</label>
+        <input type="file" name="file" id="fileInput" required>
+      </div>
+      <div class="form-group">
+        <label for="formatSelect">Output Format:</label>
+        <select name="format" id="formatSelect" required disabled>
+          <!-- Options will be populated dynamically -->
+        </select>
+      </div>
+      <button type="submit" id="convertBtn" disabled>Convert Now</button>
+    </form>
+
+    <!-- Loading spinner -->
+    <div id="loading" class="hidden">
+      <div class="spinner"></div>
+      <p>Converting your file, please wait...</p>
+    </div>
+
+    <!-- Download link -->
+    <div id="downloadSection" class="hidden">
+      <a id="downloadBtn" class="btn" href="#">Download Converted File</a>
+    </div>
+
+    <!-- Error message -->
+    <div id="errorSection" class="hidden">
+      <p id="errorMsg"></p>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features animate-slide-up">
+    <h2>Why Use Our Converter?</h2>
+    <div class="feature-grid">
+      <div class="feature-item animate-fade-in-delay">
+        <h3>Fast & Secure</h3>
+        <p>Conversions happen on the server with no data stored longer than needed.</p>
+      </div>
+      <div class="feature-item animate-fade-in-delay">
+        <h3>Dynamic Formats</h3>
+        <p>Output options adapt based on your uploaded file type for a seamless experience.</p>
+      </div>
+      <div class="feature-item animate-fade-in-delay">
+        <h3>Multiple Supports</h3>
+        <p>Handle images and documents with high-quality results.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer (Fixed for better design) -->
+  <footer class="footer animate-fade-in">
+    <div class="footer-content">
+      <p>© 2025 FileConverter | Built with ❤️ by You</p>
+      <div class="footer-links">
+        <a href="/">Home</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
