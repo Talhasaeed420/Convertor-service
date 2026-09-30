@@ -33,17 +33,20 @@ if (fileInput) {
     formatSelect.innerHTML = ""; // Clear options
     let options = [];
 
-    if (["jpg", "jpeg", "png", "webp"].includes(ext)) {
-      options = ["jpg", "jpeg", "png", "webp"];
+    if (["jpg", "jpeg", "png", "webp", "bmp", "gif", "tiff"].includes(ext)) {
+      options = ["png", "jpg", "jpeg", "webp", "pdf"].filter((opt) => opt !== ext);
+      if (options.length === 0) {
+        options = ["png", "jpg", "jpeg", "webp", "pdf"];
+      }
     } else if (ext === "docx") {
       options = ["pdf"];
     } else if (ext === "pdf") {
-      options = ["docx"];
+      options = ["docx", "png", "jpg"];
     }
 
     if (options.length === 0) {
       errorSection.classList.remove("hidden");
-      errorMsg.textContent = "Unsupported file type. Please upload an image (JPG, JPEG, PNG, WEBP), DOCX, or PDF.";
+      errorMsg.textContent = "Unsupported file type. Please upload an image (JPG, PNG, WEBP, etc.), DOCX, or PDF.";
       formatSelect.disabled = true;
       convertBtn.disabled = true;
     } else {
