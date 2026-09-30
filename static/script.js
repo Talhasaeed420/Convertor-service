@@ -79,12 +79,24 @@ if (fileInput) {
       const result = await response.json();
       loading.classList.add("hidden");
 
-      if (result.download_url) {
+      if (result.file_base64) {
+        const byteCharacters = atob(result.file_base64);
+        const byteNumbers = new Uint8Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const blob = new Blob([byteNumbers]);
+        const blobUrl = URL.createObjectURL(blob);
+        downloadBtn.href = blobUrl;
+        downloadBtn.download = result.filename || "converted_file";
+        downloadSection.classList.remove("hidden");
+      } else if (result.download_url) {
         downloadBtn.href = result.download_url;
+        downloadBtn.download = result.filename || "";
         downloadSection.classList.remove("hidden");
       } else {
         errorSection.classList.remove("hidden");
-        errorMsg.textContent = "Error: " + result.error;
+        errorMsg.textContent = "Error: " + (result.error || "Unknown conversion error");
       }
     } catch (err) {
       loading.classList.add("hidden");

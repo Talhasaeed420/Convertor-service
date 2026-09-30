@@ -1,5 +1,7 @@
 import os
+import sys
 import uuid
+import base64
 import logging
 import traceback
 from flask import Flask, request, send_file, render_template, jsonify, url_for
@@ -9,15 +11,39 @@ from PIL import Image
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-UPLOAD_FOLDER = "uploads"
-OUTPUT_FOLDER = "outputs"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-app = Flask(__name__)
+# On Vercel / AWS Lambda, the root filesystem (/var/task) is strictly read-only.
+# Only /tmp is writable.
+IS_SERVERLESS = (
+    os.environ.get("VERCEL") == "1"
+    or os.environ.get("AWS_LAMBDA_FUNCTION_NAME") is not None
+)
+
+if IS_SERVERLESS:
+    UPLOAD_FOLDER = "/tmp/uploads"
+    OUTPUT_FOLDER = "/tmp/outputs"
+else:
+    UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
+    OUTPUT_FOLDER = os.path.join(BASE_DIR, "outputs")
+
+# Safe directory creation with fallback to /tmp
+try:
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+except OSError:
+    UPLOAD_FOLDER = "/tmp/uploads"
+    OUTPUT_FOLDER = "/tmp/outputs"
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+
+app = Flask(
+    __name__,
+    template_folder=os.path.join(BASE_DIR, "templates"),
+    static_folder=os.path.join(BASE_DIR, "static"),
+)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["OUTPUT_FOLDER"] = OUTPUT_FOLDER
-
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 IMAGE_FORMAT_MAP = {
     "jpg": "JPEG",
@@ -36,7 +62,7 @@ IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".tiff"}
 def convert_image(input_path, output_path, target_format):
     target_format = target_format.lower()
     pil_format = IMAGE_FORMAT_MAP.get(target_format, target_format.upper())
-    
+
     with Image.open(input_path) as img:
         # Handle alpha channel when converting to formats that don't support transparency
         if pil_format in ("JPEG", "PDF"):
@@ -50,7 +76,7 @@ def convert_image(input_path, output_path, target_format):
                 img = bg
             elif img.mode != "RGB":
                 img = img.convert("RGB")
-        
+
         img.save(output_path, format=pil_format)
 
 
@@ -91,7 +117,7 @@ def convert_pdf_to_image(input_path, output_path, target_format):
     doc = pymupdf.open(input_path)
     if len(doc) == 0:
         raise RuntimeError("PDF contains no pages.")
-    
+
     # Render first page at high quality
     page = doc[0]
     pix = page.get_pixmap(dpi=150)
@@ -153,6 +179,12 @@ def convert_file():
         else:
             return jsonify({"error": f"Unsupported conversion from {ext or 'unknown'} to {target_format}"}), 400
 
+        # Read converted file for serverless-safe base64 delivery
+        file_base64 = None
+        if os.path.exists(output_path) and os.path.getsize(output_path) < 4 * 1024 * 1024:
+            with open(output_path, "rb") as f:
+                file_base64 = base64.b64encode(f.read()).decode("utf-8")
+
     except Exception as e:
         logger.error(f"Conversion error: {traceback.format_exc()}")
         return jsonify({"error": f"Conversion failed: {str(e)}"}), 500
@@ -165,7 +197,11 @@ def convert_file():
                 pass
 
     download_url = url_for("download_file", filename=output_filename, _external=True)
-    return jsonify({"download_url": download_url})
+    return jsonify({
+        "download_url": download_url,
+        "filename": output_filename,
+        "file_base64": file_base64,
+    })
 
 
 @app.route("/download/<filename>")
@@ -180,4 +216,3 @@ def download_file(filename):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
-
